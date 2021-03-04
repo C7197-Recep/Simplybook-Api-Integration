@@ -1,0 +1,137 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forms</title>
+    
+</head>
+<body>
+
+    <button onclick="client()">Try Client Api</button>
+    <button onclick="admin()">Try Admin Api</button>
+    <button onclick="send()">Try Rest Api</button>
+    <div id="response">Here You'll See Server Response</div>
+</body>
+
+
+  <!--<script src="ekler/jquery.min.js"></script>-->
+  <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+  <script type="text/javascript" src="https://simplybook.me/api_example/json-rpc-client.js"></script>
+
+<script>
+function client(){
+
+            //AUTHENTICATION PROCESS
+            var loginClient = new JSONRpcClient({
+                'url': 'https://user-api-v2.simplybook.me/admin/clients/1',
+                'onerror': function (error) {
+                    alert(error);
+                }
+            });
+         
+            var companyLogin="samplecompanyloginname";
+            var apiKey="sampleapikey";
+            var token = loginClient.getToken(companyLogin ,  apiKey );
+
+            this.client = new JSONRpcClient({
+                'url': 'https://user-api.simplybook.me',
+                'headers': {
+                    'X-Company-Login': companyLogin,
+                    'X-Token': token
+                },
+                'onerror': function (error) {}
+            });
+
+            //NOW, WE CAN QUERY CLIENT INFORMATION
+            var data=JSON.stringify(this.client.getClientInfoByLoginPassword ("sampleuserloginname", "sampleuserpass"));
+            alert(data);
+            //alert(JSON.stringify(this.client.getClientInfo (1)));
+            jQuery('#response').append(data);
+}
+
+function admin(){
+
+    //AUTHENTICATION PROCESS
+    var loginClient = new JSONRpcClient({
+        'url': 'https://user-api.simplybook.me' + '/login',
+        'onerror': function (error) {},
+    });
+
+    var companyLogin="samplecompanyloginname";
+    var user = "sampleadmin";
+    var pass = "samplepass";
+    var token = loginClient.getUserToken(companyLogin,user,pass);
+
+    this.client = new JSONRpcClient({
+        'url': 'https://user-api.simplybook.me' + '/admin/',
+        'headers': {
+        'X-Company-Login': companyLogin,
+        'X-User-Token': token
+        },
+        'onerror': function (error) {}
+    });
+  
+    //KNOW WE CAN PULL A CLIENT'S INFO, OF WHICH WE ONLY KNOW E-MAIL
+    //alert(JSON.stringify(this.client.getBookings({"client_id":1})));
+    var client_id=this.client.getClientList ("sampleuseremail@address.com")[0].id;
+    alert(client_id);
+    show_booking_info(this.client.getBookings({"client_id":client_id}));
+
+}
+
+function show_booking_info(bookings) {
+    
+    for (var booking in bookings) {
+        jQuery('#response').append(
+            jQuery('<option value="' + JSON.stringify(bookings[booking].id) + '">' +JSON.stringify(bookings[booking].id) +"-"+JSON.stringify(bookings[booking].client_email) +"-"+ JSON.stringify(bookings[booking].client) + "-" +  JSON.stringify(bookings[booking].event) + '</option>')
+        );
+    }
+};
+  
+//I WAS NOT SUCCESSFUL MAKING REST API WORK
+//YOU MAY WISH TO IMPROVE THIS PART
+function send() {
+        var comp = {
+            "company": "samplecompanyname",
+            "login": "sampleadmin",
+            "password": "samplepass",
+        };
+        
+        //GET THE TOKEN FOR AUTHORIZATION FOR FURTHER REQUESTS
+        $.ajax({
+            url: 'https://user-api-v2.simplybook.me/admin/auth',
+            type: 'post',
+            dataType: 'json',
+            contentType: 'application/json',
+            success: function (data) {
+                alert(JSON.stringify(data.token));
+                //HERE WE PASS THE TOKEN TO THE PRIMARY FUNCTION, WHICH WILL REQUEST THE INFORMATION
+                req(data.token);
+            },
+            data: JSON.stringify(comp)
+        });
+
+
+    }
+
+    function req(token) {
+        var person = {
+            'X-Company-Login': 'samplecompanyloginname',
+            "X-Token": token,
+        };
+
+        $.ajax({
+            url: 'https://user-api-v2.simplybook.me/admin/clients/1',
+            type: 'post',
+            dataType: 'json',
+            contentType: 'application/json',
+            success: function (data) {
+                alert(JSON.stringify(data));
+            },
+            data: JSON.stringify(person)
+        });
+    }
+
+</script>
+</html>
